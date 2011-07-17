@@ -1,0 +1,103 @@
+#!/bin/bash
+
+set -ex
+##############################################################################
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+#
+# Small shell script to show how to start/stop Tomcat using jsvc
+# If you want to have Tomcat running on port 80 please modify the server.xml
+# file:
+#
+#    <!-- Define a non-SSL HTTP/1.1 Connector on port 80 -->
+#    <Connector className="org.apache.catalina.connector.http.HttpConnector"
+#               port="80" minProcessors="5" maxProcessors="75"
+#               enableLookups="true" redirectPort="8443"
+#               acceptCount="10" debug="0" connectionTimeout="60000"/>
+#
+# That is for Tomcat-5.0.x (Apache Tomcat/5.0)
+#
+# Adapt the following lines to your configuration
+JAVA_HOME=/usr/java/default
+DAEMON_HOME=/usr/bin
+JSVC=${DAEMON_HOME}/jsvc
+DAEMON_USER=artb
+LIB_BASE=/home/artb/expj
+CONFIG_DIR=/home/artb/expj/config
+APP_JAR=testdaemon.jar
+APP_CLASS=com.ckbi.task.DaemonProxy
+APP_BASE=${LIB_BASE}
+OUT_FILE=/home/artb/jsvc.log
+ERR_FILE=/home/artb/jsvc.err
+XOPTS=
+CLASS_ARGS=
+
+# for multi instances adapt those lines.
+TMP_DIR=/var/tmp
+#PID_FILE=/var/run/jsvc.pid
+PID_FILE=/home/artb/jsvc.pid
+
+CLASSPATH=\
+${CONFIG_DIR}:\
+${LIB_BASE}/commons-daemon.jar:\
+${LIB_BASE}/spring.jar:\
+${LIB_BASE}/log4j-1.2.15.jar:\
+${LIB_BASE}/commons-logging-1.1.1.jar:\
+${APP_BASE}/${APP_JAR}
+
+#-wait 10 \
+#    -debug \
+#    -nodetach \
+
+case "$1" in
+  start)
+    #
+    # Start application 
+    #
+    rm -f ${ERR_FILE}
+    ${JSVC} \
+    -user $DAEMON_USER \
+    -home $JAVA_HOME \
+    -pidfile ${PID_FILE} \
+    -outfile ${OUT_FILE}\
+    -errfile ${ERR_FILE} \
+    ${XOPTS} \
+    -cp $CLASSPATH \
+    ${APP_CLASS} ${CLASS_ARGS}
+
+    # To get a verbose JVM
+    #-verbose \
+    # To get a debug of jsvc.
+    #-debug \
+    exit $?
+    ;;
+
+  stop)
+    #
+    # Stop application 
+    #
+    ${JSVC} \
+    -stop \
+    -pidfile $PID_FILE \
+    ${APP_CLASS}
+    exit $?
+    ;;
+
+  *)
+    echo "Usage $0 start|stop"
+    exit 1;;
+esac
