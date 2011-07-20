@@ -1,0 +1,89 @@
+<project name="puc" default="rpm">
+
+   <property file="version.properties"/>
+
+   <property name="spec.filename" value="daemon.spec"/>
+
+   <property name="src.dir" value="${basedir}/src"/>
+   <property name="src.lib.dir" value="${basedir}/src/opt/daemon/lib/"/>
+   <property name="src.spec" value="${src.dir}/spec/${spec.filename}"/>
+
+
+   <property name="output.dir" value="${basedir}/output"/>
+   <property name="output.class.dir" value="${output.dir}/classes"/>
+   <property name="output.tmp.root" value="${output.dir}/root/daemon-${version}"/>
+   <property name="output.installed.root" value="${output.tmp.root}/opt/daemon"/>
+   <property name="output.rpm.dir" value="${output.dir}/rpms"/>
+   <property name="output.rpmroot.dir" value="${output.dir}/build"/>
+
+
+   <path id="classpath">
+      <fileset dir="${src.lib.dir}" includes="**/*.jar"/>
+   </path>
+
+   <target name="all" depends="rpm, install" description="Build everything and install"/>
+
+   <target name="install" description="Copy to clevos.git dir">
+      <copy todir="../clevos.git/src/os/noarch/cleversafe/" flatten="true">
+         <fileset dir="${output.rpm.dir}">
+            <include name="**/*.rpm"/>
+         </fileset>
+      </copy>
+   </target>
+
+   <target name="compile">
+      <mkdir dir="${output.dir}/classes"/>
+      <javac srcdir="${src.dir}/java/src"
+             destdir="${output.dir}/classes"
+             classpathref="classpath"
+             debug="on">
+      <exclude name="**/test/**"/>
+      </javac>
+   </target>
+
+   <target name="rpm" depends="compile" description="Build the RPM">
+      <sequential>
+         <mkdir dir="${output.tmp.root}"/>
+         <copy overwrite="true" todir="${output.tmp.root}" includeEmptyDirs="true">
+            <fileset dir="${src.dir}">
+               <include name="etc/**"/>
+               <include name="opt/**"/>
+               <exclude name="**/local.properties"/>
+            </fileset>
+         </copy>
+         <mkdir dir="${output.tmp.root}/var/log/daemon"/>
+         <mkdir dir="${output.tmp.root}/var/run/daemon"/>
+         <copy overwrite="true" todir="${output.installed.root}/lib" flatten="true">
+            <fileset dir="${src.lib.dir}">
+               <include name="**/*.jar"/>
+            </fileset>
+         </copy>
+         <mkdir dir="${output.tmp.root}/var/log/daemon"/>
+
+         <jar destfile="${output.installed.root}/lib/daemon.jar" basedir="${output.dir}/classes"/>
+         <mkdir dir="${output.rpmroot.dir}/BUILD"/>
+         <mkdir dir="${output.rpmroot.dir}/SOURCES"/>
+         <tar destfile="${output.rpmroot.dir}/SOURCES/daemon-${version}.tar.gz"
+              compression="gzip" basedir="${output.dir}/root"/>
+         <copy tofile="${output.rpmroot.dir}/SPECS/daemon" file="${src.spec}">
+            <filterset>
+               <filter token="VERSION" value="${version}"/>
+               <filter token="BUILDPATH" value="${output.rpmroot.dir}/BUILD/daemon-${version}"/>
+            </filterset>
+         </copy>
+         <mkdir dir="${output.rpmroot.dir}/RPMS"/>
+         <rpm topDir="${output.rpmroot.dir}" specFile="daemon"/>
+
+         <copy todir="${output.rpm.dir}" flatten="true">
+            <fileset dir="${output.rpmroot.dir}/RPMS">
+               <include name="**/*.rpm"/>
+            </fileset>
+         </copy>
+      </sequential>
+   </target>
+
+   <target name="clean" description="Cleanup all intermediate files/dirs">
+      <delete dir="${output.dir}"/>
+   </target>
+
+</project>

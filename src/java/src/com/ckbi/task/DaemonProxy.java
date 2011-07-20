@@ -8,6 +8,7 @@ import org.apache.commons.daemon.DaemonInitException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 
 // Creates and wraps a working daemon in a proxy interface.
@@ -37,7 +38,7 @@ public class DaemonProxy implements Daemon {
 	public void init(DaemonContext arg0) throws DaemonInitException, Exception {
 		log.info("init invoked");
 		BeanFactory factory = new XmlBeanFactory(
-				new FileSystemResource(SP_CFG));
+				new ClassPathResource(SP_CFG));
 		String daemonBean = System.getProperty(DAEMON_BEAN_KEY, DFLT_DAEMON_BEAN_NAME) ;
 		daemon = (Daemon)factory.getBean(daemonBean);
 		daemon.init(arg0) ;

@@ -43,7 +43,7 @@ APP_CLASS=com.ckbi.task.DaemonProxy
 APP_BASE=${LIB_BASE}
 OUT_FILE=/home/artb/jsvc.log
 ERR_FILE=/home/artb/jsvc.err
-XOPTS="-Xms720m -Xmx720m -Xss1m"
+XOPTS=
 CLASS_ARGS=
 
 # for multi instances adapt those lines.
